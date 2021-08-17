@@ -1,6 +1,6 @@
-module github.com/sh3rp/tcping
+module github.com/valkmit/tcping
 
-go 1.15
+go 1.16
 
 require (
 	github.com/aybabtme/rgbterm v0.0.0-20170906152045-cc83f3b3ce59

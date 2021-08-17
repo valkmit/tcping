@@ -7,7 +7,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/sh3rp/tcping"
+	"github.com/valkmit/tcping"
 )
 
 var VERSION = "1.3.1"
