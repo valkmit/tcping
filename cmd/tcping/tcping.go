@@ -89,6 +89,6 @@ func sendProbe(probe tcping.Probe, dstIp string, dstPort uint16) {
 		fmt.Printf("Sent from %-15s to %-15s: timeout (%d ms)\n",
 			probe.SrcIp,
 			dstIp,
-			result/1000)
+			result/int64(time.Millisecond))
 	}
 }
