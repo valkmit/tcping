@@ -1,5 +1,7 @@
 # TCPing
 
+Fork of tcping by sh3rp
+
 A tool that utilizes the TCP handshake to measure latency between two hosts.  Since
 ICMP bears both the virtues of being blocked at the firewall and bearing a lower 
 priority in most routing engines, using standard ping techniques often times renders
@@ -18,7 +20,7 @@ https://golang.org.
 Then:
 
 ```
-go get github.com/sh3rp/tcping
+go get github.com/valkmit/tcping
 ```
 
 # Usage
@@ -26,7 +28,7 @@ go get github.com/sh3rp/tcping
 The simplest way to execute is:
 
 ```
-sudo tcping -h <dst ip> -p <dst port>
+sudo tcping -p <dst port> <dst host>
 ```
 
 You can add the '-d' flag for debugging the packets sent and received.
