@@ -46,9 +46,19 @@ func (p Probe) GetLatency(dstIp string, dstPort uint16) (int64, error) {
 		if err != nil {
 			return
 		}
+		defer conn.Close()
+
+		start := time.Now()
 
 		var tcp *TCPHeader
 		for {
+			// this is kind of dirty, because if we're stuck waiting for
+			// a packet we will never hit here, but for any system where there's
+			// any kind of traffic flowing this should be good enough
+			if time.Since(start) > p.Timeout {
+				break
+			}
+
 			buf := make([]byte, 1024)
 			numRead, raddr, err := conn.ReadFrom(buf)
 			if err != nil {
@@ -59,6 +69,7 @@ func (p Probe) GetLatency(dstIp string, dstPort uint16) (int64, error) {
 
 			if raddr.String() == dst && tcp.Src == dstPort && (seq+1) == tcp.Ack {
 				notify <- tcp
+				break
 			}
 		}
 	}(p.SrcIp, dstIp, dstPort)
@@ -261,11 +272,11 @@ func printTCP(tcp *TCPHeader) {
 	} else {
 		str = str + "_"
 	}
-	str = str + fmt.Sprintf("]")
+	str = str + "]"
 	str = str + fmt.Sprintf(" [ WIN: %5d ]\n", tcp.Window)
 	str = str + fmt.Sprintf("[ SUM: %5d ] [ URG: %5d ] \n", tcp.Checksum, tcp.Urgent)
 	for _, o := range tcp.Options {
 		str = str + fmt.Sprintf("[ Option: kind=%d len=%d data=%v ]\n", o.Kind, o.Length, o.Data)
 	}
-	fmt.Printf(str)
+	fmt.Print(str)
 }
