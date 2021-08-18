@@ -34,6 +34,8 @@ func (p Probe) GetLatency(dstIp string, dstPort uint16) (int64, error) {
 
 	notify := make(chan *TCPHeader)
 
+	seq := rand.Uint32()
+
 	go func(src string, dst string, dstPort uint16) {
 		netaddr, err := net.ResolveIPAddr("ip4", src)
 		if err != nil {
@@ -55,13 +57,16 @@ func (p Probe) GetLatency(dstIp string, dstPort uint16) (int64, error) {
 
 			tcp = ParseTCP(buf[:numRead])
 
-			if raddr.String() == dst && tcp.Src == dstPort {
+			if raddr.String() == dst && tcp.Src == dstPort && (seq+1) == tcp.Ack {
 				notify <- tcp
 			}
 		}
 	}(p.SrcIp, dstIp, dstPort)
 
-	send, err := p.SendPing(p.SrcIp, dstIp, dstPort)
+	send, err := p.SendPing(p.SrcIp, dstIp, dstPort, seq)
+	if err != nil {
+		return -1, err
+	}
 
 	var mark int64
 
@@ -71,11 +76,9 @@ func (p Probe) GetLatency(dstIp string, dstPort uint16) (int64, error) {
 		case <-notify:
 			mark = time.Now().UnixNano() - send.Mark
 			done = true
-			break
 		case <-time.After(p.Timeout):
 			mark = -1
 			done = true
-			break
 		}
 		if done {
 			break
@@ -85,7 +88,7 @@ func (p Probe) GetLatency(dstIp string, dstPort uint16) (int64, error) {
 	return mark, nil
 }
 
-func (p Probe) SendPing(srcIP, dstIP string, dstPort uint16) (ProbePacket, error) {
+func (p Probe) SendPing(srcIP, dstIP string, dstPort uint16, seq uint32) (ProbePacket, error) {
 
 	// reserve a local port
 
@@ -106,7 +109,7 @@ func (p Probe) SendPing(srcIP, dstIP string, dstPort uint16) (ProbePacket, error
 	packet := NewTCPHeader().
 		SrcPort(uint16(l.Addr().(*net.TCPAddr).Port)).
 		DstPort(dstPort).
-		SeqNum(rand.Uint32()).
+		SeqNum(seq).
 		WithFlag(SYN).
 		Win(32676)
 
